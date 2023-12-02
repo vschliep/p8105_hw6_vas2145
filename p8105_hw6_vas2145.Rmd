@@ -1,0 +1,59 @@
+---
+title: "p8108_hw6_vas2145"
+author: "Victoria Schliep"
+date: "2023-12-02"
+output: html_document
+---
+
+
+#loading libraries
+```{r}
+library(tidyverse)
+library(modelr)
+library(mgcv)
+library(dplyr)
+library(knitr)
+set.seed()
+```
+
+#download provided data
+```{r}
+weather_df = 
+  rnoaa::meteo_pull_monitors(
+    c("USW00094728"),
+    var = c("PRCP", "TMIN", "TMAX"), 
+    date_min = "2022-01-01",
+    date_max = "2022-12-31") |>
+  mutate(
+    name = recode(id, USW00094728 = "CentralPark_NY"),
+    tmin = tmin / 10,
+    tmax = tmax / 10) |>
+  select(name, id, everything())
+```
+
+#create 5,000 bootstrap samples
+```{r}
+bootstrap_df = weather_df |> 
+  modelr::bootstrap(n = 5000) |> 
+  mutate(
+    models =
+      map(
+        strap, \(df) lm(tmax ~ tmin + prcp, data = df)),
+    results = map(
+      models, broom::glance)) |> 
+  select(results, .id, rsq) |> 
+  unnest(results) |> 
+  filter(term %in% c("tmin", "prcp")) |> 
+  group_by(,id) |> 
+  mutate(beta1xbeta2 = prod(estimate),
+        log_beta_product = log(beta1xbeta2)) |> 
+  select(log_beta_product, rsq) |> 
+  unnest(rsq) |> 
+  janitor::clean_names() |> 
+  select(log_beta_product, id, r_squared) |> 
+  unique()
+
+      )
+  )
+```
+
