@@ -13,7 +13,7 @@ library(modelr)
 library(mgcv)
 library(dplyr)
 library(knitr)
-set.seed()
+set.seed(1)
 ```
 
 #download provided data
@@ -36,24 +36,28 @@ weather_df =
 bootstrap_df = weather_df |> 
   modelr::bootstrap(n = 5000) |> 
   mutate(
-    models =
-      map(
-        strap, \(df) lm(tmax ~ tmin + prcp, data = df)),
-    results = map(
-      models, broom::glance)) |> 
+    models = map(strap, \(df) lm(tmax ~ tmin + prcp, data = df)),
+    results = map(models, broom::tidy),
+    rsq = map(models, broom::glance)) |> 
   select(results, .id, rsq) |> 
   unnest(results) |> 
   filter(term %in% c("tmin", "prcp")) |> 
-  group_by(,id) |> 
+  group_by(.id) |> 
   mutate(beta1xbeta2 = prod(estimate),
-        log_beta_product = log(beta1xbeta2)) |> 
+         log_beta_product = log(beta1xbeta2)) |> 
   select(log_beta_product, rsq) |> 
   unnest(rsq) |> 
   janitor::clean_names() |> 
   select(log_beta_product, id, r_squared) |> 
   unique()
 
-      )
-  )
+```
+
+#Plot the distribution of estimates
+
+```{r}
+bootstrap_df |> 
+  ggplot(aes(x = log_beta_product)) +
+  geom_density()
 ```
 
