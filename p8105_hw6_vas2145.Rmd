@@ -2,7 +2,7 @@
 title: "p8108_hw6_vas2145"
 author: "Victoria Schliep"
 date: "2023-12-02"
-output: html_document
+output: github_document
 ---
 
 
@@ -91,3 +91,44 @@ The 95% confidence interval for the log of the beta product is (`r bootstrap_ci$
 The 95% confidence interval for r-squared is (`r bootstrap_ci$rs_low`, `r bootstrap_ci$rs_high`).
 
 #Problem 3
+
+Download data
+
+```{r}
+bwt_df = read.csv("birthweight.csv")
+
+bwt_df = bwt_df |> 
+  janitor::clean_names() |> 
+  mutate(
+    babysex = as.factor(babysex),
+    frace = as.factor(frace),
+    malform = as.factor(malform),
+    mrace = as.factor(mrace)) |> 
+  drop_na()
+
+```
+
+Create a regression model
+
+```{r}
+fit = lm(bwt ~ fincome + gaweeks + smoken, data = bwt_df)
+
+fit |>
+  broom::tidy() |>
+  select(term, estimate, p.value) |>
+  knitr::kable(digits=3)
+
+summary(fit)
+
+```
+
+The regression model is based on key factors that I believe may have an influence on a child's birthweight, the family's monthly income (`fincome`), the gestational weeks in age0  (`gaweeks`) and the average number of cigarettes smoked per day in pregnancy (`smoken`). Because the p-values are all less than 0.01, none need to be removed from the model.
+
+```{r}
+bwt_df |> 
+  modelr::add_residuals(fit) |> 
+  modelr::add_predictions(fit) |> 
+  ggplot(aes(x = resid, y = pred)) +
+  geom_point(alpha = 0.5)
+```
+
