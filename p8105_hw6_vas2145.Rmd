@@ -132,3 +132,5 @@ bwt_df |>
   geom_point(alpha = 0.5)
 ```
 
+The plot above is a plot of the residuals against the predicted birthweight. The largest concentration of predicted birthweight against 0 residuals is around 3250g.
+
